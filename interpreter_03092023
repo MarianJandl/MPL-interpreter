@@ -1,0 +1,919 @@
+#TO DO:
+# upravit prirazovani indexu:
+# text[x] = "a"
+#
+# pridat dalsi metody pro stringy
+#
+# arrays
+#
+# pridat lenght do calc - bude to jednodussi
+# rozsirit podminky - &, | , ! nebo vypocty
+#
+# 
+#
+#
+#
+#
+#
+import time
+import os
+import random
+from colorama import init
+from termcolor import colored
+import math
+ 
+init()
+
+varName = []
+varValue = []
+varType = []
+arrName = []
+arrValue = []
+numbers = ["1","2","3","4","5","6","7","8","9","0"]
+letters = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz"
+op = ["<=", ">=","==", "!=", "<", ">" ]
+
+
+def indexing(string, index):
+    return string[index]
+
+
+def write(line):
+    #print(line)
+    line = line.split("(")
+    line = line[1:]
+    #print(line)
+    str1 = ""
+    for i in range(len(line)):
+        str1 += line[i]
+    line = str1
+    #print(line)
+    cont = line[:-1]
+    #print(cont)
+    a = cont.split(",")
+    #print(a)
+    cont = a[0].strip()
+    #print(a)
+    if len(a) == 1:
+        en = ""
+    else:
+        en = a[1].strip()[1:-1]
+        
+        #print(a)
+        if a[1].strip()[:2] == "fg" or  a[1].strip()[:2] == "bg":
+            a.insert(1,"")
+            en = ""
+        elif en == "n":
+            en = "\n"
+        elif en == "r":
+            en = "\r"
+    
+    if len(a) == 3 or len(a) == 4:
+        if len(a) == 3:
+            if a[2].strip()[:2] == "fg":
+                info = a[2].split("=")
+                fg = info[1].strip()
+                fg = fg.replace("\"","")
+                #sprint(fg)
+                bg = "on_black"
+            elif a[2].strip()[:2] == "bg":
+                info = a[2].split("=")
+                bg = info[1].strip()
+                bg = bg.replace("\"","")
+                bg = 'on_'+bg
+                #print(bg)
+                fg = "white"
+            else:
+                print("color error")
+        elif len(a) == 4:
+            if a[2].strip()[:2] == "fg" and a[3].strip()[:2] == "bg":
+                fginfo = a[2].split("=")
+                fg = fginfo[1].strip()
+                fg = fg.replace("\"","")
+                
+                bginfo = a[3].split("=")
+                bg = bginfo[1].strip()
+                bg = bg.replace("\"","")
+                bg = 'on_'+bg
+                
+            elif a[2].strip()[:2] == "bg" and a[3].strip()[:2] == "fg":
+                fginfo = a[3].split("=")
+                fg = fginfo[1].strip()
+                fg = fg.replace("\"","")
+                
+                bginfo = a[2].split("=")
+                bg = bginfo[1].strip()
+                bg = bg.replace("\"","")
+                bg = 'on_'+bg
+
+    else:
+        fg = "white"
+        bg = "on_black"            
+    if cont in varName:
+        c = realVal(cont)
+    elif cont.find("[") != -1:
+        s = cont.split("[")
+                    
+        s[1] = s[1].replace("]", "")
+        s[0] = s[0].strip()
+                    
+        if s[0] in varName:
+            index = varName.index(s[0])
+            c = indexing(varValue[index], calc(s[1]))
+    elif cont.find("+") != -1 and cont.find("\"") != -1:
+        b = cont.split("+")
+                        
+        co = []
+        for i in range(len(b)):
+            co.append(b[i].strip())
+        s = ""
+        for j in range(len(co)):
+            if co[j] in varName:
+                s += varValue[varName.index(co[j])]
+            elif co[j][0] == "\"":
+                s += co[j][1:-1]
+            else:
+                print("error2  " + str(lineIndex+1))
+            
+        c = s
+    elif cont[0] == "\"":
+        c = cont[1:-1]
+    else:
+        c= calc(cont)
+  
+    print(colored(c, fg, bg), end = en)
+
+def vars():
+    print("######################")
+    print("names: ", end="")
+    print(varName)  
+    print("values: ", end="")
+    print(varValue)
+    print("types: ", end="")
+    print(varType)
+    print("######################")
+
+def realVal(var):
+    if var[0] == "\"":
+        return var[1:-1]
+    elif var in varName:
+        index = varName.index(var) 
+        return varValue[index]
+    elif var.find("[") != -1:
+        s = var.split("[")
+                    
+        s[1] = s[1].replace("]", "")
+        s[0] = s[0].strip()
+                    
+        if s[0] in varName:
+            index = varName.index(s[0])
+            return indexing(varValue[index], calc(s[1]))
+    elif var[0] in numbers:
+        return float(var)
+
+def checkCond(condition):
+    
+    for i in op:
+        
+        if condition.find(i) != -1:
+            condition = condition.split(i)
+            operator = i
+            break
+        else:
+            continue
+    #print(condition)
+    #operindex = op.index(condition[1])
+    #operator = op[operindex]
+   # print(operator)
+    a = realVal(condition[0].strip())
+    b = realVal(condition[1].strip())
+    #print(type(a))
+    #print(b)
+    
+    if operator == "==":
+        if a == b:
+            return True
+        else:
+            return False
+    elif operator == "!=":
+        if a != b:
+            return True
+        else:
+            return False
+    elif operator == "<":
+        #b = b - 1
+        if a < b:
+            return True
+        else:
+            return False
+    elif operator == ">":
+        #a = a - 1
+        if a > b:
+            return True
+        else:
+            return False
+    elif operator == "<=":
+        #b = b - 1
+        if a <= b:
+            return True
+        else:
+            return False
+    elif operator == ">=":
+        #a = a - 1
+        if a >= b:
+            return True
+        else:
+            return False
+
+def execLine(Line):
+    words = Line.split()
+    global loop
+    global whileIndex
+    global lineIndex
+    
+    
+    if words == []:
+        pass  
+    elif words[0] == "int" or words[0] == "float" or words[0] == "str"or words[0] == "arr":
+        global lineIndex
+        vtype = words[0]
+        if vtype == "arr":
+            pass
+        else:
+            if vtype == "int":
+                varType.append("int")
+            elif(vtype == "float"):
+                varType.append("float")
+            elif(vtype == "str"):
+                varType.append("str")
+            else:
+                print("Error: unknown variable type \n types: int,float, str  " + str(lineIndex+1))
+            #if words[1] in varName:
+             #   print("Error: duplicate name of variables  " + str(lineIndex+1),end=" ")
+            #else:
+            #    varName.append(words[1])
+            #if len(words) == 20:
+            #    pass#   varValue.append("")
+            #else:      
+                #print(vtype)
+            if vtype == "int":
+                
+                #print(Line)
+                m = Line[3:]
+                #print(Line)
+                #print(m)
+                if m.find("=") == -1:
+                    
+                    if m.strip() in varName:
+                        print("Error: duplicate name of variables "+m.strip()+" at line number "+str(lineIndex+1)+", please check your code again.")
+                    else:
+                        varName.append(m.strip())
+                    
+                    varValue.append("")
+                else:
+                    
+                    s = m.split("=")
+                    
+                    #print(s)
+                    name = s[0].strip()
+                    val = s[1]
+                    #print(val[:6])
+                    if name in varName:
+                        print("Error: duplicate name of variables "+m.strip()+" at line number "+str(lineIndex+1)+", please check your code again.")
+                    else:
+                        varName.append(name)
+                    if val.strip()[:6] == "lenght":
+                        #print(Line)
+                        Line = Line.split("=")
+                        #print(Line)
+                        Line = Line[1].strip()
+                        #print(Line)
+                        s = Line.split("(")
+                        ##print(s)
+                        s[1] = s[1].replace(")", "")
+                        if s[1] in varName:
+                            varValue.append(len(varValue[varName.index(s[1])]))
+                        else:
+                            print("error tsdy")
+                    else:
+                        calculate = ""
+                        for i in range(len(val)):
+                            calculate += (val[i])
+                            #print(calculate)
+                        varValue.append(int(calc(calculate)))
+            elif vtype == "float":
+                #print(Line)
+                m = Line[5:]
+                #print(Line)
+                #print(m)
+                if m.find("=") == -1:
+                    
+                    if m.strip() in varName:
+                        print("Error: duplicate name of variables "+m.strip()+" at line number "+str(lineIndex+1)+", please check your code again.")
+                    else:
+                        varName.append(m.strip())
+                    
+                    varValue.append("")
+                else:
+                    
+                    s = m.split("=")
+                    
+                    #print(s)
+                    name = s[0].strip()
+                    val = s[1]
+                    #print(val[:6])
+                    if name in varName:
+                        print("Error: duplicate name of variables "+m.strip()+" at line number "+str(lineIndex+1)+", please check your code again.")
+                    else:
+                        varName.append(name)
+                    if val.strip()[:6] == "lenght":
+                        #print(Line)
+                        Line = Line.split("=")
+                        #print(Line)
+                        Line = Line[1].strip()
+                        #print(Line)
+                        s = Line.split("(")
+                        ##print(s)
+                        s[1] = s[1].replace(")", "")
+                        if s[1] in varName:
+                            varValue.append(len(varValue[varName.index(s[1])]))
+                        else:
+                            print("error")
+                    else:
+                        calculate = ""
+                        for i in range(len(val)):
+                            calculate += (val[i])
+                            #print(calculate)
+                        varValue.append(float(calc(calculate)))
+            elif vtype == "str":
+                m = Line[3:]
+                #print(Line)
+                if m.find("=") == -1:
+                    if m.strip() in varName:
+                        print("Error: duplicate name of variables "+m.strip()+" at line number "+str(lineIndex+1)+", please check your code again.")
+                    else:
+                        varName.append(m.strip())
+                    
+                    varValue.append("")
+                else:
+                    
+                    s = m.split("=")
+                    #print(s)
+                    name = s[0].strip()
+                    
+                    #print(val[:6])
+                    if name in varName:
+                        print("Error: duplicate name of variables "+m.strip()+" at line number "+str(lineIndex+1)+", please check your code again.")
+                    else:
+                        varName.append(name)
+                    ##print(Line)
+                    i = Line.index("=")
+                    Line = Line[i+1:]
+                    #print(Line)
+                    #ci = Line.index("\"")
+                    #pi = Line.index("+")
+                    if Line.find("\"") != - 1 and Line.find("+") == -1:
+                        
+                        ci = Line.index("\"")
+                        Line = Line[ci:]
+                        Line = Line.replace("\"", "")
+                        Line = Line.replace("\"", "")
+                        value = Line
+                    
+                    elif Line.find("\"") == -1 and Line.find("+") == -1 and Line.find("[") != -1:
+                        
+                        s = Line.split("[")
+                        
+                        s[1] = s[1].replace("]", "")
+                        
+                        s[0] = s[0].strip()
+                        
+                        if s[0] in varName:
+                            index = varName.index(s[0])
+                            value = indexing(varValue[index], calc(s[1]))
+                    
+                    elif Line.find("\"") == -1 and Line.find("+") == -1:
+                        
+                        while Line[0] == " ":
+                            Line=Line[1:]
+                        if Line in varName:
+                            value = varValue[varName.index(Line)]
+                        else:
+                            print("error1  " + str(lineIndex+1))
+                    elif Line.find("+") != -1:
+                        b = Line.split("+")
+                        
+                        c = []
+                        for i in range(len(b)):
+                            c.append(b[i].strip())
+                        s = ""
+                        for j in range(len(c)):
+                            if c[j] in varName:
+                                s += varValue[varName.index(c[j])]
+                            elif c[j][0] == "\"":
+                                s += c[j][1:-1]
+                            else:
+                                print("error2  " + str(lineIndex+1))
+                            
+                        value = s
+                    elif Line.find("[") != -1:
+                        #print((Line))
+                        value = Line
+                    varValue.append(value)
+    elif words[0] == "write" or words[0][:5] == "write":
+    
+        index = Line.find("(")
+        Line = Line[:index] + " " + Line[index:]
+        write(Line)
+    elif words[0] == "input":
+        if len(words) == 3:
+            inpCont = words[1:]
+            if inpCont[0] == "int" or inpCont[0] == "float" or inpCont[0] == "str":
+                varType.append(inpCont[0])
+            else:
+                print("error  " + str(lineIndex+1))
+            if inpCont[1] in varName:
+                print("Error: duplicate name of variables  " + str(lineIndex+1),end=" ")
+            else:
+                varName.append(inpCont[1])
+            inpVal = input()
+            if inpCont[0] == "int":
+                varValue.append(int(inpVal))
+            elif inpCont[0] == "float":
+                varValue.append(float(inpVal))
+            elif inpCont[0] == "str":
+                varValue.append(str(inpVal))
+            else:
+                print("error  " + str(lineIndex+1))
+        elif len(words) == 2:
+            name = words[1]
+            if name in varName:
+                index = varName.index(name)
+                tp = varType[index]
+                if tp == "int":
+                    varValue[index] = int(input())
+                elif tp == "float":
+                    varValue[index] = float(input())
+                elif tp == "str":
+                    varValue[index] == str(input())
+                else: 
+                    print("error")
+    elif words[0] == "goto":
+        lineN = words[1:]
+        #print(lineN)
+        
+        lineIndex = int(lineN[0])-2 
+    elif words[0].find("//") != -1:
+        pass
+    elif words[0] == "$vars":
+        vars()
+    elif words[0] == "delay" or words[0][:5] == "delay":
+        s = Line.split("(")
+        
+        s[1] = s[1].replace(")","")
+        s[1] = s[1].strip()
+        t = s[1]
+        
+        wait = float(t) / 1000
+        time.sleep(wait)
+    elif words[0] == "end":
+        exit()
+    elif words[0] == "dlt":
+        name = words[1:]
+    
+        if name[0] in varName:
+            i = varName.index(name[0])
+            varName.pop(i)
+            varValue.pop(i)
+            varType.pop(i)
+        else:
+            print("this variable does not exist")
+    elif words[0][:-2] in varName:
+        name = words[0][:-2]
+        index = varName.index(name)
+        typ = varType[index]
+        if typ == "int" or typ == "float":
+            if words[0][-2:] == "++":
+                varValue[index] += 1
+            elif words[0][-2:] == "--":
+                varValue[index] -= 1
+            else:
+                print("error" + str(lineIndex + 1))
+    elif words[0] in varName or words[0].find("=") != -1:
+        s = Line.split("=")
+        name = s[0].strip()
+        value = s[1]
+        #print(value.strip()[:6] + "")
+        if name in varName:
+            ##print("here")
+            i = varName.index(name)
+            if varType[i] == "int":
+                #print("here")
+                if value.strip()[:6] == "lenght":
+                    Line = Line.split("=")
+                    #print(Line)
+                    Line = Line[1].strip()
+                    #print(Line)
+                    s = Line.split("(")
+                    ##print(s)
+                    s[1] = s[1].replace(")", "")
+                    if s[1] in varName:
+                        varValue[i] = (len(varValue[varName.index(s[1])]))
+                else:
+                    #print(value)
+                    varValue[i] = int(calc(value))
+            elif varType[i] == "float":
+                varValue[i] = float(calc(value))
+            elif varType[i] == "str":
+                #print(Line)
+                #print(name)
+                #print(words[0])
+                j = Line.index("=")
+                
+                #print(Line)
+                Line = Line[j+1:]
+
+                if Line.find("\"") != - 1 and Line.find("+") == -1:
+                    
+                    ci = Line.index("\"")
+                    Line = Line[ci:]
+                    Line = Line.replace("\"", "")
+                    Line = Line.replace("\"", "")
+                    value = Line
+                
+                elif Line.find("+") != -1:
+                    b = Line.split("+")
+                    
+                    c = []
+                    for k in range(len(b)):
+                        c.append(b[k].strip())
+                    s = ""
+                    
+                    for j in range(len(c)):
+                        if c[j] in varName:
+                            s += varValue[varName.index(c[j])]
+                        elif c[j][0] == "\"":
+                            s += c[j][1:-1]
+                        else:
+                            print("error2  " + str(lineIndex+1))
+                        
+                    value = s
+
+                elif Line.find("\"") == -1 and Line.find("+") == -1 and Line.find("[") != -1:
+                    
+                    s = Line.split("[")
+                    
+                    s[1] = s[1].replace("]", "")
+                    
+                    s[0] = s[0].strip()
+                    
+                    if s[0] in varName:
+                        index = varName.index(s[0])
+                        value = indexing(varValue[index], calc(s[1]))
+                
+                elif Line.find("\"") == -1 and Line.find("+") == -1:
+                    
+                    while Line[0] == " ":
+                        Line=Line[1:]
+                    if Line in varName:
+                        value = varValue[varName.index(Line)]
+                    else:
+                        print("error1  " + str(lineIndex+1))
+                varValue[i] = value
+    elif words[0][-1] == "]":
+        sp = Line.split("=")
+        #print(sp)
+        nameInfo = sp[0].split("[")
+        print(nameInfo)
+        name = nameInfo[0].strip()
+        print(name)
+        index = int(calc(nameInfo[1].strip().replace("]","")))
+        print(index)
+        c = sp[1]
+        print(c)
+        change = ""
+        if c.strip() in varName:
+            change = str(varValue[varName.index(c.strip())])
+            if len(change) > 1:
+                print("error3  " + str(lineIndex + 1))
+                exit()
+        elif c.strip()[0] == "\"":
+            change = c.strip()[1:-1]
+            if len(change) > 1:
+                print("error3  " + str(lineIndex + 1))
+                exit()
+        if varType[index] == "str":
+            v = varValue[varName.index(name)]
+            r = ""
+            for i in range(len(v)):
+                if i == index:
+                    r += change
+                else:
+                    r += v[i]
+            varValue[varName.index(name)] = r
+    elif words[0] == "if":
+        i = lines.index(Line)
+        lines2 = lines[i:]
+        ifStatement(lines2)
+        #conOpIn = Line.index("(")
+        #conEnIn = Line.index(")")
+        #condition = Line[conOpIn + 1:conEnIn]  
+    elif words[0] == "while" or words[0][:5] == "while":
+        
+        conOpIn = Line.index("(")
+        conEnIn = Line.index(")")
+        condition = Line[conOpIn + 1:conEnIn]
+
+        i = lines.index(Line)
+
+        lines2 = lines[i:]
+        
+        whileIndex = 0
+        
+        loop = True
+        #print(loop)
+        endIndex = findEnd(lines2)
+        code = lines2[2:endIndex]
+        while checkCond(condition) == True:
+            whileIndex = 0
+            #print(code)
+            while whileIndex < len(code):
+                #print("whileindex",whileIndex)
+                execLine(code[whileIndex])
+                whileIndex += 1
+        
+        loop = False
+        lineIndex = endIndex + i
+
+
+def ifStatement(lines3):
+    #print(lines3)
+    if loop == True:
+        
+        if lines3[0][5:] == "else ":
+            first = lines3[0].replace("else ","")
+        else:
+            first = lines3[0]
+        conOpIn = first.index("(")
+        conEnIn = first.index(")")
+        condition = first[conOpIn + 1:conEnIn]
+        
+        if checkCond(condition) == True:
+            global whileIndex
+            endIndex = findEnd(lines3)
+            code = lines3[2:endIndex]
+            #print(code)
+            for l in range(len(code)):
+                
+                execLine(code[l])
+            
+            ii  = endIndex
+            for li in range(len(lines3)):
+                if lines3[li][:6] == "else  ": 
+                    ii = li
+                    break
+            lines4 = lines3[ii:]
+            #print(lines.index(lines4[0]))
+            endElse = findEnd(lines4)
+            #print(endElse)
+            whileIndex = lines.index(lines4[0])# + endElse
+            #print(">>>",lines[whileIndex])
+        else:   
+            endIndex = findEnd(lines3)
+            if lines3[endIndex+1][:7] == "else if":
+                lines3 = lines3[endIndex+1:]
+                ifStatement(lines3)
+            elif lines3[endIndex+1][:4] == "else":
+                lines3 = lines3[endIndex+1:]
+                i = findEnd(lines3)
+                code = lines3[2:i]
+                for p in range(len(code)):
+                    execLine(code[p])
+                #print(lines.index(lines3[0]))
+                whileIndex = lines.index(lines3[0])
+            else:
+                whileIndex = lines.index(lines3[0]) #+ endIndex
+    elif loop == False:
+        if lines3[0][5:] == "else ":
+            first = lines3[0].replace("else ","")
+        else:
+            first = lines3[0]
+        conOpIn = first.index("(")
+        conEnIn = first.index(")")
+        condition = first[conOpIn + 1:conEnIn]
+        
+        if checkCond(condition) == True:
+            endIndex = findEnd(lines3)
+            
+            code = lines3[2:endIndex]
+            
+            for l in range(len(code)):
+                execLine(code[l])
+            
+            
+            ii  = endIndex
+            for li in range(len(lines3)):
+            
+                if lines3[li][:6] == "else  ":
+                    
+                    ii = li
+                    break
+        
+            lines4 = lines3[ii:]
+            
+            endElse = findEnd(lines4)
+            print(lines.index(lines4[0]) + endElse)
+            
+            lineIndex = lines.index(lines4[0]) + endElse
+            
+        else:   
+            endIndex = findEnd(lines3)
+            
+            if lines3[endIndex+1][:7] == "else if":
+            
+                lines3 = lines3[endIndex+1:]
+                
+            
+                ifStatement(lines3)
+            elif lines3[endIndex+1][:4] == "else":
+                lines3 = lines3[endIndex+1:]
+                
+                i = findEnd(lines3)
+                
+                code = lines3[2:i]
+                
+                for p in range(len(code)):
+                    execLine(code[p])
+                
+                lineIndex = i + lines.index(lines3[0])
+            else:
+                
+                lineIndex = lines.index(lines3[0]) + endIndex
+            
+
+def findEnd(list):
+    depth = 0
+    for i in range(len(list)):
+        if list[i] == "{":
+            
+            depth += 1
+            #print(depth)
+        elif list[i] == "}":
+            depth -=1
+            #print(depth)
+            if depth == 0:
+                break
+    return i
+
+def calc(calculate): 
+    
+    calculate += " + 0"
+    #print(calculate)
+    s = addSpace(calculate)
+    s = s.split()
+    exp = ""
+    for j in range(len(s)):
+        char = s[j]
+        #print(char)
+        if char in varName:
+            #print(varName.index(char))
+            index = varName.index(char)
+            if varType[index] == "str":
+                
+                print("Error  " + str(lineIndex+1))
+                break
+            else:
+                #print(index)
+                exp += str(varValue[index])
+                
+        else:
+            exp += char 
+    #print(exp)
+    
+    #print(exp)     
+    result = eval(exp)
+    #print(result)
+    return result
+
+def findAll(list_to_check, item_to_find):
+    indices = []
+    for idx, value in enumerate(list_to_check):
+        if value.find(item_to_find) == False:
+            indices.append(idx)
+    return indices
+
+def addSpace(string):
+    l = 0
+    new = ""
+    char = "+"
+    
+    while l < len(findAll(string, char)):
+        new = string.replace(char, " " + char + " ")
+        l += 1
+    char = "-"
+    l = 0
+     
+    while l < len(findAll(string, char)):
+        new = new.replace(char, " " + char + " ")
+        l += 1
+    char = "*"
+    l = 0
+    
+    while l < len(findAll(string, char)):
+        new = new.replace(char, " " + char + " ")
+        l += 1
+    char = "/"
+    l = 0
+    
+    while l < len(findAll(string, char)):
+        new = new.replace(char, " " + char + " ")
+        l += 1
+    char = "("
+    l = 0
+    
+    while l < len(findAll(string, char)):
+        new = new.replace(char, " " + char + " ")
+        l += 1
+    
+    char = ")"
+    l = 0
+    while l < len(findAll(string, char)):
+        new = new.replace(char, " " + char + " ")
+        l += 1
+    return new
+
+def rmvSpace(arr):
+    arr2 = []
+    for i in range(len(arr)):
+        arr2.append(arr[i].strip())
+    return arr2
+
+def addto():
+    global addIndex
+    string = ""
+    for i in range(addIndex):
+        string += "  /"
+    addIndex += 1
+    return string
+
+def removeComment(arr):
+    arr2 = []
+    for e in arr:
+        if e.find(";") != -1:
+            
+            i = e.find(";")
+            e = e[:i]
+            arr2.append(e)
+        else:
+            arr2.append(e)
+    return arr2
+def newlineBracket(arr):
+    for j in range(len(arr)):
+        if arr[j].find("{") != -1 and arr[j][:5] == "while" or arr[j][:2] == "if" or arr[j][:4] == "else":
+            i = arr[j].find("{")
+            
+            arr[j]=arr[j].replace("{",addto())
+            #print(arr[j])
+            arr.insert(j+1,"{")
+    return arr
+filename = "C:\\Marian\\VS code\\python\\program.bbn"
+#run = True
+#while run:
+    #filename = input("> ")
+    #if filename == "exit":
+    #    break
+    #elif filename == "cls":
+    #    os.system('cls')
+    #elif filename == "":
+    #    pass
+    #else:
+    #    try:
+
+addIndex = 1
+file = open(filename, "r")
+a = file.read().split("\n")
+#b = [i for i in a if i != ""]
+global lines
+
+loop = False
+lines = rmvSpace(a)
+lines = newlineBracket(lines)
+print(lines)
+lines = removeComment(lines)
+print("lines: ", end="")
+print(lines)
+lineIndex = 0
+while lineIndex < len(lines):
+    line = lines[lineIndex]
+    execLine(line)
+    lineIndex += 1
+varName = []
+varValue = []
+varType = []
+        #except FileNotFoundError:
+        #    print("[ERROR]: No such file or directory.")
+        #except KeyboardInterrupt:
+        #    varName = []
+        #    varValue = []
+        #    varType = []
+        #    pass
